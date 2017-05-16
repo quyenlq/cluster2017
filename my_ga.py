@@ -7,8 +7,8 @@ from solution import Solution, Point
 
 # M: number of clusters
 # return a new solution with M random centroids
-def gen_initial_solution(data, M):
-	random_centroids = data[np.random.choice(np.arange(len(data)),M)]
+def gen_initial_solution(data, K):
+	random_centroids = data[np.random.choice(np.arange(len(data)),K)]
 	centroid_points = np.array([])
 	i = 0
 	for c in random_centroids:
@@ -20,65 +20,60 @@ def gen_initial_solution(data, M):
 	return Solution(centroid_points,data_points)
 
 # f = data, c = number of cluster, k: number of cluster
-def ga(data,c):
+def ga(data,K):
 	solutions = np.array([])
 	for s in range(S):
-		print 'Gen inital solution %d' %s
-		new_solution = gen_initial_solution(data,c)
+		# Gen S seed data
+		new_solution = gen_initial_solution(data,K)
 		new_solution.partition()
-		print 'Partition new solution %d complete' % s
 		solutions=np.append(solutions,new_solution)
-		print 'Added solution %d to solution set' % s
 	top_solutions = np.array([])
 	for t in range(T):
-		print 'Start gen new solutions from solution set'
-		new_solutions=gen_new_solutions(solutions)
-		print 'Gen completed, pick best'
+		print 'ITERATION #%d'%t
+		print 'Start generate %d new solutions from population set'%S
+		new_solutions=gen_new_solutions(solutions,K)
+		print 'Gen completed, picked best, remove the rest'
 		best_solution = get_best_solutions(new_solutions)
-		print 'Picked best, added to top'
 		top_solutions=np.append(top_solutions,best_solution)
-	print 'Finish, return top '
+	print 'Finish, return best of bests'
 	return get_best_solutions(top_solutions)
 
 def get_best_solutions(sols):
-	print 'Chose best from sols'
-	print [s.MSE() for s in sols]
-	pdb.set_trace()
+	# print [s.MSE() for s in sols]
 	return sols[np.argmin([s.MSE() for s in sols])]
 
 # Gen new solutions from initial solutions
 # repeat S times to generate S solutions
-def gen_new_solutions(solutions):
+def gen_new_solutions(solutions,K):
 	new_solutions = np.array([])
 	for i in range(S):
-		print 'Pick pair of solutions %d' %i
+		# print 'Pick pair of solutions %d' %i
 		solution_pair = get_pair(solutions)
-		new_solution = cross_over(solution_pair)
+		new_solution = cross_over(solution_pair,K)
 		new_solutions=np.append(new_solutions,new_solution)
 	return new_solutions
 
 # Crossover 2 solution to generate one solution
-def cross_over(pair):
-	print 'Start crossover, choose from sol pair'
+def cross_over(pair,K):
+	# print 'Start crossover, choose from sol pair'
 	sol1 = copy.deepcopy(pair[0])
 	sol2 = copy.deepcopy(pair[1])
 	combined_centroids = combine_centroids(sol1.centroids_,sol2.centroids_)
 	combined_partitions = combine_partitions(sol1,sol2,combined_centroids)
-	print 'Combined centroids size: %d, combined partition size: %d' %(combined_centroids.size, combined_partitions.size)
 	sol = Solution(combined_centroids,combined_partitions)
 	sol.update_centroid()
 	sol.remove_empty_clusters()
-	print 'Remove empty cluster, now sol has %d clusters' %(sol.centroids_.size)
+	# print 'Remove empty cluster, now sol has %d clusters' %(sol.centroids_.size)
 	sol.relabel()
-	print 'Relabel cluster'
-	return pnn(sol)
+	# print 'Relabel cluster'
+	return pnn(sol,K)
 
 
-# TODO: Add K as paremetter
-def pnn(solution, K = 15):
+def pnn(solution, K):
 	solution.find_nearest_neighbor()
 	while solution.centroids_.size > K:
 		solution.mergePNN()
+		# print("merge 2 cluster, cluster left: %d"%solution.centroids_.size)
 	solution.relabel()
 	return solution
 
@@ -114,7 +109,32 @@ def combine_partitions(sol1,sol2,c_com):
 		combine_p=np.append(combine_p,x_new)
 	return combine_p
 
+def plot_solution(sol,gt):
+	plt.figure()
+	cx = np.array([c.xy_ for c in sol.centroids_])
+	for c in sol.centroids_:
+		partition = sol.get_partition(c.label_)
+		pxy = np.array([[p.getX(), p.getY()] for p in partition])
+		# pdb.set_trace()
+		plt.scatter(pxy[:, 0], pxy[:, 1], s=2, marker='.', c='b')
+	plt.scatter(cx[:, 0], cx[:, 1], marker='.', c='r')
+	plt.scatter(gt[:, 0], gt[:, 1], marker='.', c='m', )
+	plt.show()
 
+def ci(sol,gt,k):
+	cens = np.array([c.xy_ for c in sol.centroids_])
+	return max(one_way_ci(cens,gt,k),one_way_ci(gt,cens,k))
+
+def one_way_ci(cens_A, cens_B, n_clus):
+	orphans = np.ones(n_clus);
+	for cenA in cens_A:
+		dist = []
+		for cenB in cens_B:
+			d = np.linalg.norm(cenA-cenB)
+			dist.append(d);
+		mapTo = dist.index(min(dist))
+		orphans[mapTo]=0;
+	return sum(orphans)
 
 ################################################################################################
 # MAIN
@@ -123,8 +143,8 @@ def combine_partitions(sol1,sol2,c_com):
 
 k = [15,15,15,15,20,35,50,8,100,100,16];
 files = ['s1','s2','s3','s4', 'a1', 'a2', 'a3','unbalance','birch1', 'birch2','dim32']
-S = 5
-T = 3
+S = 45
+T = 10
 def main():
 	np.random.seed(1)
 	for t in range(T):
@@ -135,8 +155,10 @@ def main():
 			data = np.loadtxt(fi)
 			gt = np.loadtxt(fi_gt)
 			sol=ga(data,c)
-			print sol.MSE()
-			break
+			CI = ci(sol,gt,c)
+			# plot_solution(sol,gt)
+			print("FINISH CI:=%d, MSE=%.2f"%(CI,sol.MSE()))
+			# break
 
 main()
 

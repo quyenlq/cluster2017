@@ -27,14 +27,13 @@ class Solution:
 		for c in self.centroids_:
 			lbl = c.label_
 			points = self.get_partition(lbl)
-			new_c_xy = np.mean([p.xy_ for p in points])
+			new_c_xy = np.mean([p.xy_ for p in points],axis=0)
 			c.xy_ = new_c_xy
 
 	# Calculate mean square error
 	def MSE(self):
 		TSE = 0
 		for c in self.centroids_:
-			print(c.xy_)
 			p = self.get_partition(c.label_)
 			for x in p:
 				e = np.dot(x.xy_-c.xy_,x.xy_-c.xy_)
@@ -60,23 +59,15 @@ class Solution:
 	# Remove cluster with size == 0
 	def remove_empty_clusters(self):
 		# Get cluster centroid with partition size = 0
-		print("Current cluster")
 		centroids_label = [c.label_ for c in self.centroids_]
 		empty_c_label = [c for c in centroids_label if self.get_partition(c).size==0 ]
 		empty_c_idx = [centroids_label.index(c) for c in empty_c_label]
-		# pdb.set_trace()
-		if empty_c_idx:
-			# If exists nearest neighbor array, remove that of deleted cluster
-			if self.nn_ is not None:
-				# empty_nn = self.nn_[empty_c_idx]
-				self.nn_ = np.delete(self.nn_,empty_c_idx)
-			# Similar to dists array
-			if self.dists_ is not None:
-				# empty_dists = self.dists_[empty_c_idx]
-				self.dists_ = np.delete(self.dists_, empty_c_idx)
-			self.centroids_ = np.delete(self.centroids_, empty_c_idx)
-			# print np.max([p.label_ for p in self.points_])
-			print([c.label_ for c in self.centroids_])
+		if self.nn_ is not None:
+			for c in empty_c_label:
+				del self.nn_[str(c)]
+				del self.dists_[str(c)]
+		self.centroids_ = np.delete(self.centroids_, empty_c_idx)
+		# print([c.label_ for c in self.centroids_])
 
 	# Relabel from zero to size of centroids
 	def relabel(self):
@@ -87,7 +78,6 @@ class Solution:
 				x.label_ *= (-1)
 			c.label_*= -1
 		for c in self.centroids_:
-			print 'Rename label %d to label %d' %(c.label_, i)
 			p = self.get_partition(c.label_)
 			for x in p:
 				x.label_=i
@@ -97,8 +87,8 @@ class Solution:
 	# Find nearest neighbor, save list of nearest neighbor and corresponding
 	# distance to object attributes nn_ & dists_
 	def find_nearest_neighbor(self):
-		self.nn_ = np.array([])
-		self.dists_ = np.array([])
+		self.nn_ = {}
+		self.dists_ = {}
 		for a in self.centroids_:
 			na = self.get_partition(a.label_).size
 			nn_c = None
@@ -110,29 +100,40 @@ class Solution:
 					if dist<min_dist or min_dist == -1:
 						nn_c = b
 						min_dist=dist
-			self.nn_ = np.append(self.nn_,nn_c)
-			self.dists_ = np.append(self.dists_, min_dist)
+			self.nn_[str(a.label_)] = nn_c
+			self.dists_[str(a.label_)] = dist
+
+		# print("Finish finding nears neighbors!")
+		# print("C :", [c.label_ for c in self.centroids_])
+		# print("NN:", [idx + '->' + str(val.label_) for idx, val in self.nn_.items()])
 
 	# Update nearest neighbor after merge two cluster
 	def updateNN(self, lbl1, lbl2):
-		for idx,a in enumerate(self.centroids_):
+		# print("Delete %d because it was merged to %d" % (lbl2, lbl1))
+		# print("NN:", [idx + '->' + str(val.label_) for idx, val in self.nn_.items()])
+		for a in self.centroids_:
 			# For each centroid of solution
 			# find a new neighbor only if this has been
 			# changed because of merging
-			nearest_c = self.nn_[idx]
+			nearest_c = self.nn_[str(a.label_)]
 			if nearest_c.label_==lbl1 or nearest_c.label_==lbl2:
 				na = self.get_partition(a.label_).size
-				nn_c = None
+				new_nearest_c = None
 				min_dist = -1
 				for b in self.centroids_:
 					if b != a and b!=nearest_c:
 						nb = self.get_partition(b.label_).size
+						if nb == 0:
+							continue
 						dist = (np.dot(a.xy_ - b.xy_, a.xy_ - b.xy_) * na * nb) / (na + nb)
 						if dist < min_dist or min_dist == -1:
-							nn_c = b
+							new_nearest_c = b
 							min_dist = dist
-				self.nn_[idx] = nn_c
-				self.dists_[idx] = min_dist
+				self.nn_[str(a.label_)] = new_nearest_c
+				self.dists_[str(a.label_)] = min_dist
+				# print("%d -> %d" % (a.label_,new_nearest_c.label_))
+		# print("NN:", [idx + '->' + str(val.label_) for idx, val in self.nn_.items()])
+
 
 	# Merge two clusters which have smallest merging cost function
 	def mergePNN(self):
@@ -141,25 +142,31 @@ class Solution:
 		# equivalent to first label of nearest pair
 		# for example: dists = [ 3 2 (1) 4 ], nn_ = [c2,c4,(c3),c1]
 		# then lbl1 = 2, c2 = nn_[lbl1]= c3 -> lbl2 = c3.label_
-		lbl1 = np.argmin(self.dists_)
-		c1 = self.centroids_[lbl1]
-		c2 = self.nn_[lbl1]
+		lbl1_s = min(self.dists_.items(), key=lambda x: x[1])[0]
+		lbl1 = int(lbl1_s)
+		c1 = self.get_centroid(lbl1)[0]
+		c2 = self.nn_[lbl1_s]
 		lbl2 = c2.label_
 
 		p1 = self.get_partition(lbl1)
 		n1 = p1.size
 		p2 = self.get_partition(lbl2)
 		n2 = p2.size
+
+		# print("Move centroid %d" % lbl1)
+
 		# Move centroid c1
+		# pdb.set_trace()
 		cmerge_xy = ((n1*c1.xy_) + (n2*c2.xy_))/(n1+n2)
+		# pdb.set_trace()
 		c1.xy_ = cmerge_xy
 		# Change label of partition
 		# no need to change points in p1
 		for p in p2:
 			p.label_ = c1.label_
-		# Update nearest neighbors
-		self.updateNN(lbl1,lbl2)
+		self.updateNN(lbl1, lbl2)
 		self.remove_empty_clusters()
+		# Update nearest neighbors
 
 	def display(self):
 		print([p.label_ for p in self.points_])
@@ -170,10 +177,10 @@ class Point:
 		self.label_ = label
 
 	def getX(self):
-		return self.xy[0]
+		return self.xy_[0]
 
 	def getY(self):
-		return self.xy[1]
+		return self.xy_[1]
 
 	def __str__(self):
 		return  "%d: %.2f %.2f" %(self.label_,self.xy_[0], self.xy_[1])
