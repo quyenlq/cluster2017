@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 import matplotlib.pyplot as plt
 import pdb
 from solution import Solution, Point
@@ -18,7 +19,7 @@ def gen_initial_solution(data, M):
 	data_points = np.array([Point(x) for x in data])
 	return Solution(centroid_points,data_points)
 
-# f = data, c = number of cluster
+# f = data, c = number of cluster, k: number of cluster
 def ga(data,c):
 	solutions = np.array([])
 	for s in range(S):
@@ -42,6 +43,7 @@ def ga(data,c):
 def get_best_solutions(sols):
 	print 'Chose best from sols'
 	print [s.MSE() for s in sols]
+	pdb.set_trace()
 	return sols[np.argmin([s.MSE() for s in sols])]
 
 # Gen new solutions from initial solutions
@@ -58,25 +60,24 @@ def gen_new_solutions(solutions):
 # Crossover 2 solution to generate one solution
 def cross_over(pair):
 	print 'Start crossover, choose from sol pair'
-	sol1 = pair[0]
-	sol2 = pair[1]
+	sol1 = copy.deepcopy(pair[0])
+	sol2 = copy.deepcopy(pair[1])
 	combined_centroids = combine_centroids(sol1.centroids_,sol2.centroids_)
 	combined_partitions = combine_partitions(sol1,sol2,combined_centroids)
-	print 'Combined centroids size: %d, combined parition size: %d' %(combined_centroids.size, combined_partitions.size)
+	print 'Combined centroids size: %d, combined partition size: %d' %(combined_centroids.size, combined_partitions.size)
 	sol = Solution(combined_centroids,combined_partitions)
 	sol.update_centroid()
 	sol.remove_empty_clusters()
 	print 'Remove empty cluster, now sol has %d clusters' %(sol.centroids_.size)
 	sol.relabel()
 	print 'Relabel cluster'
-	sol.display()
 	return pnn(sol)
 
 
 # TODO: Add K as paremetter
 def pnn(solution, K = 15):
 	solution.find_nearest_neighbor()
-	while solution.centroids_.size >= K:
+	while solution.centroids_.size > K:
 		solution.mergePNN()
 	solution.relabel()
 	return solution
@@ -89,10 +90,10 @@ def get_pair(solutions):
 	return pair
 
 def combine_centroids(c1,c2):
-	k = np.max([c.label_ for c in c1]) +1
+	add_lbl = c1.size
 	c_new = np.copy(c2)
 	for c in c_new:
-		c.label_+=k
+		c.label_+=add_lbl
 	c_com = np.append(c1,c_new)
 	return c_com
 
@@ -107,10 +108,10 @@ def combine_partitions(sol1,sol2,c_com):
 		d1 = sol1.distance_to_centroid(x,c_com[x.label_])
 		d2 = sol2.distance_to_centroid(x,c_com[x.label_+k])
 		if d1 < d2:
-			x = Point(x.xy_, x.label_)
+			x_new = Point(x.xy_, x.label_)
 		else:
-			x = Point(x.xy_, x.label_+ k)
-		combine_p=np.append(combine_p,x)
+			x_new = Point(x.xy_, x.label_+ k)
+		combine_p=np.append(combine_p,x_new)
 	return combine_p
 
 
@@ -133,7 +134,6 @@ def main():
 			fi_gt = open(f+'-gt.txt')
 			data = np.loadtxt(fi)
 			gt = np.loadtxt(fi_gt)
-			# ga(data,c)
 			sol=ga(data,c)
 			print sol.MSE()
 			break

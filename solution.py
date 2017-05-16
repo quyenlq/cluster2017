@@ -9,6 +9,7 @@ class Solution:
 	def __init__(self, c,p):
 		self.centroids_ = c
 		self.points_ = p
+		self.k_ = c.size
 
 	# Partition
 	def partition(self):
@@ -33,6 +34,7 @@ class Solution:
 	def MSE(self):
 		TSE = 0
 		for c in self.centroids_:
+			print(c.xy_)
 			p = self.get_partition(c.label_)
 			for x in p:
 				e = np.dot(x.xy_-c.xy_,x.xy_-c.xy_)
@@ -58,24 +60,34 @@ class Solution:
 	# Remove cluster with size == 0
 	def remove_empty_clusters(self):
 		# Get cluster centroid with partition size = 0
-		empty_c = np.array([c for c in self.centroids_ if self.get_partition(c.label_).size==0])
-		# Get index of these partitions
-		empty_c_idx = np.array([c.label_ for c in empty_c])
-		# If exists nearest neighbor array, remove that of deleted cluster
-		if self.nn_ is not None:
-			# empty_nn = self.nn_[empty_c_idx]
-			self.nn_ = np.delete(self.nn_,empty_c_idx)
-		# Similar to dists array
-		if self.dists_ is not None:
-			# empty_dists = self.dists_[empty_c_idx]
-			self.dists_ = np.delete(self.dists_, empty_c_idx)
-		self.centroids_ = np.delete(self.centroids_, empty_c_idx)
+		print("Current cluster")
+		centroids_label = [c.label_ for c in self.centroids_]
+		empty_c_label = [c for c in centroids_label if self.get_partition(c).size==0 ]
+		empty_c_idx = [centroids_label.index(c) for c in empty_c_label]
+		# pdb.set_trace()
+		if empty_c_idx:
+			# If exists nearest neighbor array, remove that of deleted cluster
+			if self.nn_ is not None:
+				# empty_nn = self.nn_[empty_c_idx]
+				self.nn_ = np.delete(self.nn_,empty_c_idx)
+			# Similar to dists array
+			if self.dists_ is not None:
+				# empty_dists = self.dists_[empty_c_idx]
+				self.dists_ = np.delete(self.dists_, empty_c_idx)
+			self.centroids_ = np.delete(self.centroids_, empty_c_idx)
+			# print np.max([p.label_ for p in self.points_])
+			print([c.label_ for c in self.centroids_])
 
 	# Relabel from zero to size of centroids
 	def relabel(self):
 		i = 0
 		for c in self.centroids_:
-			print 'Rename label %d to label %d'
+			p = self.get_partition(c.label_)
+			for x in p:
+				x.label_ *= (-1)
+			c.label_*= -1
+		for c in self.centroids_:
+			print 'Rename label %d to label %d' %(c.label_, i)
 			p = self.get_partition(c.label_)
 			for x in p:
 				x.label_=i
