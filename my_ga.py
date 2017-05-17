@@ -154,8 +154,8 @@ k_test = [15]
 files_test = ['s1']
 
 
-S = 9
-T = 10
+S = 5
+T = 5
 GLA = True
 GLA_STEPS = 3
 def main(arg):
@@ -179,8 +179,9 @@ def main(arg):
 		gt = np.loadtxt(fi_gt)
 		sol=ga(data,c)
 		CI = ci(sol,gt,c)
-		# plot_solution(sol,gt)
-		print("FINISH DATASET %s CI:=%d, MSE=%.2f"%(f,CI,sol.MSE_))
+		print("FINISH DATASET %s CI:=%d, MSE=%.2f" % (f, CI, sol.MSE_))
+		plot_solution(sol,gt)
+
 
 
 np.random.seed(2991)
