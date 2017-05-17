@@ -21,37 +21,48 @@ def gen_initial_solution(data, K):
 
 # f = data, c = number of cluster, k: number of cluster
 def ga(data,K):
-	solutions = np.array([])
+	population = np.array([])
 	for s in range(S):
 		# Gen S seed data
 		new_solution = gen_initial_solution(data,K)
 		new_solution.partition()
-		solutions=np.append(solutions,new_solution)
-	top_solutions = np.array([])
+		new_solution.calculate_MSE()
+		population=np.append(population,new_solution)
+	# top_solutions = np.array([])
 	for t in range(T):
 		print 'ITERATION #%d'%t
-		print 'Start generate %d new solutions from population set'%S
-		solutions=gen_new_solutions(solutions,K)
-		print 'Gen completed, picked best, remove the rest'
-		best_solution = get_best_solutions(solutions)
-		top_solutions=np.append(top_solutions,best_solution)
+		print 'Start generate %d new solutions from population set'%(S*(S-1)/2)
+		ancestors=gen_new_generation(population,K)
+		print 'Generated %d ancestors' %ancestors.size
+		population = np.append(population,ancestors)
+		print 'Sort population'
+		# pdb.set_trace()
+		population.sort()
+		# sorted(population, key=lambda x: tuple(x.MSE_))
+		print 'Remove weak ancestor'
+		population = population[:S]
+		# print 'Gen completed, picked best, remove the rest'
+		# best_solution = get_best_solutions(new_solutions)
+		# top_solutions=np.append(top_solutions,best_solution)
 	print 'Finish, return best of bests'
-	return get_best_solutions(top_solutions)
-
-def get_best_solutions(sols):
-	# print [s.MSE() for s in sols]
-	return sols[np.argmin([s.MSE() for s in sols])]
+	return population[0]
+#
+# def get_best_solutions(sols):
+# 	# print [s.MSE() for s in sols]
+# 	return sols[np.argmin([s.MSE() for s in sols])]
 
 # Gen new solutions from initial solutions
 # repeat S times to generate S solutions
-def gen_new_solutions(solutions,K):
-	new_solutions = np.array([])
+def gen_new_generation(solutions,K):
+	ancestors = np.array([])
+	# n = S*(S-1)/2
 	for i in range(S):
-		# print 'Pick pair of solutions %d' %i
-		solution_pair = get_pair(solutions)
-		new_solution = cross_over(solution_pair,K)
-		new_solutions=np.append(new_solutions,new_solution)
-	return new_solutions
+		for j in range(S):
+			if j>i:
+				parent = get_pair(solutions,i,j)
+				ancestor = cross_over(parent, K)
+				ancestors = np.append(ancestors, ancestor)
+	return ancestors
 
 # Crossover 2 solution to generate one solution
 def cross_over(pair,K):
@@ -75,14 +86,12 @@ def pnn(solution, K):
 		solution.mergePNN()
 		# print("merge 2 cluster, cluster left: %d"%solution.centroids_.size)
 	solution.relabel()
+	solution.calculate_MSE()
 	return solution
 
 
-def get_pair(solutions):
-	pair = np.random.choice(solutions, 2)
-	while pair[0]==pair[1]:
-		pair = np.random.choice(solutions, 2)
-	return pair
+def get_pair(solutions,i,j):
+	return np.array([solutions[i], solutions[j]])
 
 def combine_centroids(c1,c2):
 	add_lbl = c1.size
@@ -141,24 +150,29 @@ def one_way_ci(cens_A, cens_B, n_clus):
 ################################################################################################
 
 
-k = [15,15,15,15,20,35,50,8,100,100,16];
-files = ['s1','s2','s3','s4', 'a1', 'a2', 'a3','unbalance','birch1', 'birch2','dim32']
+# k = [15,15,15,15,20,35,50,8,100,100,16];
+# files = ['s1','s2','s3','s4', 'a1', 'a2', 'a3','unbalance','birch1', 'birch2','dim32']
+# k = [15,15,15,15,20,35,50,8,16];
+# files = ['s1','s2','s3','s4', 'a1', 'a2', 'a3','unbalance','dim32']
+k = [15]
+files = ['s1']
+
+
 S = 5 
 T = 10
 def main():
-	np.random.seed(1)
-	for t in range(T):
-		for f,c in zip(files,k):
-			print 'Running data set %s' %f
-			fi = open(f+'.txt')
-			fi_gt = open(f+'-gt.txt')
-			data = np.loadtxt(fi)
-			gt = np.loadtxt(fi_gt)
-			sol=ga(data,c)
-			CI = ci(sol,gt,c)
-			# plot_solution(sol,gt)
-			print("FINISH CI:=%d, MSE=%.2f"%(CI,sol.MSE()))
-			# break
+	np.random.seed(2991)
+	for f,c in zip(files,k):
+		print 'Running data set %s' %f
+		fi = open(f+'.txt')
+		fi_gt = open(f+'-gt.txt')
+		data = np.loadtxt(fi)
+		gt = np.loadtxt(fi_gt)
+		sol=ga(data,c)
+		CI = ci(sol,gt,c)
+		plot_solution(sol,gt)
+		print("FINISH CI:=%d, MSE=%.2f"%(CI,sol.MSE_))
+		# break
 
 main()
 

@@ -10,6 +10,7 @@ class Solution:
 		self.centroids_ = c
 		self.points_ = p
 		self.k_ = c.size
+		self.MSE_ = -1
 
 	# Partition
 	def partition(self):
@@ -31,15 +32,15 @@ class Solution:
 			c.xy_ = new_c_xy
 
 	# Calculate mean square error
-	def MSE(self):
+	def calculate_MSE(self):
 		TSE = 0
 		for c in self.centroids_:
 			p = self.get_partition(c.label_)
 			for x in p:
 				e = np.dot(x.xy_-c.xy_,x.xy_-c.xy_)
 				TSE+=e
-
-		return TSE/self.points_.size
+		self.MSE_=TSE/self.points_.size
+		return self.MSE_
 
 
 	# Distance from a point to its centroid
@@ -83,6 +84,7 @@ class Solution:
 				x.label_=i
 			c.label_=i
 			i+=1
+
 
 	# Find nearest neighbor, save list of nearest neighbor and corresponding
 	# distance to object attributes nn_ & dists_
@@ -170,6 +172,9 @@ class Solution:
 
 	def display(self):
 		print([p.label_ for p in self.points_])
+
+	def __lt__(self, other):
+		return self.MSE_ < other.MSE_
 
 class Point:
 	def __init__(self,xy,label=-1):
