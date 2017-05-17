@@ -30,7 +30,7 @@ def ga(data,K):
 		population=np.append(population,new_solution)
 	# top_solutions = np.array([])
 	for t in range(T):
-		print 'ITERATION #%d'%t
+		print 'ITERATION #%d ================================================='%t
 		print 'Start generate %d new solutions from population set'%(S*(S-1)/2)
 		ancestors=gen_new_generation(population,K)
 		print 'Generated %d ancestors' %ancestors.size
@@ -46,16 +46,11 @@ def ga(data,K):
 		# top_solutions=np.append(top_solutions,best_solution)
 	print 'Finish, return best of bests'
 	return population[0]
-#
-# def get_best_solutions(sols):
-# 	# print [s.MSE() for s in sols]
-# 	return sols[np.argmin([s.MSE() for s in sols])]
 
 # Gen new solutions from initial solutions
 # repeat S times to generate S solutions
 def gen_new_generation(solutions,K):
 	ancestors = np.array([])
-	# n = S*(S-1)/2
 	for i in range(S):
 		for j in range(S):
 			if j>i:
@@ -69,15 +64,18 @@ def cross_over(pair,K):
 	# print 'Start crossover, choose from sol pair'
 	sol1 = copy.deepcopy(pair[0])
 	sol2 = copy.deepcopy(pair[1])
-	combined_centroids = combine_centroids(sol1.centroids_,sol2.centroids_)
-	combined_partitions = combine_partitions(sol1,sol2,combined_centroids)
+	combined_centroids = combine_centroids(sol1.centroids_,sol2.centroids_,K)
+	combined_partitions = combine_partitions(sol1,sol2,combined_centroids,K)
 	sol = Solution(combined_centroids,combined_partitions)
 	sol.update_centroid()
 	sol.remove_empty_clusters()
 	# print 'Remove empty cluster, now sol has %d clusters' %(sol.centroids_.size)
 	sol.relabel()
 	# print 'Relabel cluster'
-	return pnn(sol,K)
+	sol=pnn(sol, K)
+	if GLA:
+		sol.GLA(GLA_STEPS)
+	return sol
 
 
 def pnn(solution, K):
@@ -93,16 +91,14 @@ def pnn(solution, K):
 def get_pair(solutions,i,j):
 	return np.array([solutions[i], solutions[j]])
 
-def combine_centroids(c1,c2):
-	add_lbl = c1.size
-	c_new = np.copy(c2)
+def combine_centroids(c1,c2,K):
+	c_new = copy.deepcopy(c2)
 	for c in c_new:
-		c.label_+=add_lbl
+		c.label_+=K
 	c_com = np.append(c1,c_new)
 	return c_com
 
-def combine_partitions(sol1,sol2,c_com):
-	k = c_com.size/2
+def combine_partitions(sol1,sol2,c_com,K):
 	N = sol1.points_.size
 	combine_p = np.array([])
 	for i in range(N):
@@ -110,11 +106,11 @@ def combine_partitions(sol1,sol2,c_com):
 		# x: new point
 		x = sol1.points_[i]
 		d1 = sol1.distance_to_centroid(x,c_com[x.label_])
-		d2 = sol2.distance_to_centroid(x,c_com[x.label_+k])
+		d2 = sol2.distance_to_centroid(x,c_com[x.label_+K])
 		if d1 < d2:
 			x_new = Point(x.xy_, x.label_)
 		else:
-			x_new = Point(x.xy_, x.label_+ k)
+			x_new = Point(x.xy_, x.label_+ K)
 		combine_p=np.append(combine_p,x_new)
 	return combine_p
 
@@ -139,7 +135,7 @@ def one_way_ci(cens_A, cens_B, n_clus):
 	for cenA in cens_A:
 		dist = []
 		for cenB in cens_B:
-			d = np.linalg.norm(cenA-cenB)
+			d = np.dot(cenA-cenB,cenA-cenB)
 			dist.append(d);
 		mapTo = dist.index(min(dist))
 		orphans[mapTo]=0;
@@ -160,6 +156,8 @@ files_test = ['s1']
 
 S = 9
 T = 10
+GLA = True
+GLA_STEPS = 3
 def main(arg):
 	if arg=='full':
 		print("Use full dataset, might be slow")
@@ -181,13 +179,13 @@ def main(arg):
 		gt = np.loadtxt(fi_gt)
 		sol=ga(data,c)
 		CI = ci(sol,gt,c)
-		plot_solution(sol,gt)
+		# plot_solution(sol,gt)
 		print("FINISH DATASET %s CI:=%d, MSE=%.2f"%(f,CI,sol.MSE_))
-		# break
+
+
 np.random.seed(2991)
 from sys import argv
 if len(argv)==2 and (argv[1] == 'full' or argv[1] == 'test'):
-	# pdb.set_trace()
 	main(argv[1])
 else:
 	main('lightweight')

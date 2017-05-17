@@ -23,6 +23,12 @@ class Solution:
 			p.label_ = centroid.label_
 		self.update_centroid()
 
+	# Fine-tuning solution
+	def GLA(self,n):
+		for i in range(n):
+			self.partition()
+			self.update_centroid()
+
 	# Update centroids
 	def update_centroid(self):
 		for c in self.centroids_:
@@ -46,7 +52,6 @@ class Solution:
 	# Distance from a point to its centroid
 	@staticmethod
 	def distance_to_centroid(x, c):
-		# c = self.get_centroid(x.label_)
 		return np.dot(x.xy_-c.xy_,x.xy_-c.xy_)
 
 	# Get partition from label
