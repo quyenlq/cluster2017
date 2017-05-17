@@ -150,18 +150,29 @@ def one_way_ci(cens_A, cens_B, n_clus):
 ################################################################################################
 
 
-# k = [15,15,15,15,20,35,50,8,100,100,16];
-# files = ['s1','s2','s3','s4', 'a1', 'a2', 'a3','unbalance','birch1', 'birch2','dim32']
-# k = [15,15,15,15,20,35,50,8,16];
-# files = ['s1','s2','s3','s4', 'a1', 'a2', 'a3','unbalance','dim32']
-k = [15]
-files = ['s1']
+k_full = [15,15,15,15,20,35,50,8,100,100,16];
+files_full = ['s1','s2','s3','s4', 'a1', 'a2', 'a3','unbalance','birch1', 'birch2','dim32']
+k_lightweight = [15,15,15,15,20,35,50,8,16];
+files_lightweight = ['s1','s2','s3','s4', 'a1', 'a2', 'a3','unbalance','dim32']
+k_test = [15]
+files_test = ['s1']
 
 
-S = 5 
+S = 9
 T = 10
-def main():
-	np.random.seed(2991)
+def main(arg):
+	if arg=='full':
+		print("Use full dataset, might be slow")
+		files=files_full
+		k=k_full
+	elif arg=='test':
+		print("Testing algorith, only use S1")
+		files=files_test
+		k=k_test
+	else:
+		print("Lightweight mode, skip Birch1 and Birch2")
+		files = files_lightweight
+		k = k_lightweight
 	for f,c in zip(files,k):
 		print 'Running data set %s' %f
 		fi = open(f+'.txt')
@@ -171,8 +182,15 @@ def main():
 		sol=ga(data,c)
 		CI = ci(sol,gt,c)
 		plot_solution(sol,gt)
-		print("FINISH CI:=%d, MSE=%.2f"%(CI,sol.MSE_))
+		print("FINISH DATASET %s CI:=%d, MSE=%.2f"%(f,CI,sol.MSE_))
 		# break
+np.random.seed(2991)
+from sys import argv
+if len(argv)==2 and (argv[1] == 'full' or argv[1] == 'test'):
+	# pdb.set_trace()
+	main(argv[1])
+else:
+	main('lightweight')
 
-main()
+
 
