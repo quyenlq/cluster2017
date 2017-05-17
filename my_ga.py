@@ -31,9 +31,9 @@ def ga(data,K):
 	for t in range(T):
 		print 'ITERATION #%d'%t
 		print 'Start generate %d new solutions from population set'%S
-		new_solutions=gen_new_solutions(solutions,K)
+		solutions=gen_new_solutions(solutions,K)
 		print 'Gen completed, picked best, remove the rest'
-		best_solution = get_best_solutions(new_solutions)
+		best_solution = get_best_solutions(solutions)
 		top_solutions=np.append(top_solutions,best_solution)
 	print 'Finish, return best of bests'
 	return get_best_solutions(top_solutions)
@@ -143,7 +143,7 @@ def one_way_ci(cens_A, cens_B, n_clus):
 
 k = [15,15,15,15,20,35,50,8,100,100,16];
 files = ['s1','s2','s3','s4', 'a1', 'a2', 'a3','unbalance','birch1', 'birch2','dim32']
-S = 45
+S = 5 
 T = 10
 def main():
 	np.random.seed(1)
