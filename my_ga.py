@@ -30,7 +30,7 @@ def ga(data,K):
 		population=np.append(population,new_solution)
 	# top_solutions = np.array([])
 	for t in range(T):
-		print 'ITERATION #%d ================================================='%t
+		print 'GA Iter #%d'%t
 		#print 'Start generate %d new solutions from population set'%(S*(S-1)/2)
 		ancestors=gen_new_generation(population,K)
 		#print 'Generated %d ancestors' %ancestors.size
@@ -43,8 +43,7 @@ def ga(data,K):
 		population = population[:S]
 		# print 'Gen completed, picked best, remove the rest'
 		# best_solution = get_best_solutions(new_solutions)
-		# top_solutions=np.append(top_solutions,best_solution)
-	print 'Finish, return best of bests'
+		# top_solutions=np.append(top_solutions,best_solution)s
 	return population[0]
 
 # Gen new solutions from initial solutions
@@ -154,17 +153,11 @@ k_test = [15]
 files_test = ['s1']
 
 
-<<<<<<< HEAD
 S = 9
 T = 10
 GLA = False 
-=======
-S = 5
-T = 5
-GLA = True
->>>>>>> 98657c00ad970893cf35635ae6c8bbd9bf472e95
 GLA_STEPS = 3
-ITER = 10
+ITER = 5
 def main(arg):
 	if arg=='full':
 		print("Use full dataset, might be slow")
@@ -178,19 +171,18 @@ def main(arg):
 		print("Lightweight mode, skip Birch1 and Birch2")
 		files = files_lightweight
 		k = k_lightweight
-	for f,c in zip(files,k):
-		print 'Running data set %s' %f
-		fi = open(f+'.txt')
-		fi_gt = open(f+'-gt.txt')
-		data = np.loadtxt(fi)
-		gt = np.loadtxt(fi_gt)
-		for i in range(ITER):
-			print("GA #%d"%i)
+	for i in range(ITER):
+		print("ITERATION #%d"%i)
+		for f,c in zip(files,k):
+			print 'Running data set %s' %f
+			fi = open(f+'.txt')
+			fi_gt = open(f+'-gt.txt')
+			data = np.loadtxt(fi)
+			gt = np.loadtxt(fi_gt)
 			sol=ga(data,c)
 			CI = ci(sol,gt,c)
 			# plot_solution(sol,gt)
 			print("FINISH DATASET %s CI:=%d, MSE=%.2f"%(f,CI,sol.MSE_))
-
 
 #np.random.seed(2991)
 from sys import argv
