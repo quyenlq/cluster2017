@@ -31,15 +31,15 @@ def ga(data,K):
 	# top_solutions = np.array([])
 	for t in range(T):
 		print 'ITERATION #%d ================================================='%t
-		print 'Start generate %d new solutions from population set'%(S*(S-1)/2)
+		#print 'Start generate %d new solutions from population set'%(S*(S-1)/2)
 		ancestors=gen_new_generation(population,K)
-		print 'Generated %d ancestors' %ancestors.size
+		#print 'Generated %d ancestors' %ancestors.size
 		population = np.append(population,ancestors)
-		print 'Sort population'
+		#print 'Sort population'
 		# pdb.set_trace()
 		population.sort()
 		# sorted(population, key=lambda x: tuple(x.MSE_))
-		print 'Remove weak ancestor'
+		#print 'Remove weak ancestor'
 		population = population[:S]
 		# print 'Gen completed, picked best, remove the rest'
 		# best_solution = get_best_solutions(new_solutions)
@@ -156,8 +156,9 @@ files_test = ['s1']
 
 S = 9
 T = 10
-GLA = True
+GLA = False 
 GLA_STEPS = 3
+ITER = 10
 def main(arg):
 	if arg=='full':
 		print("Use full dataset, might be slow")
@@ -177,13 +178,15 @@ def main(arg):
 		fi_gt = open(f+'-gt.txt')
 		data = np.loadtxt(fi)
 		gt = np.loadtxt(fi_gt)
-		sol=ga(data,c)
-		CI = ci(sol,gt,c)
-		# plot_solution(sol,gt)
-		print("FINISH DATASET %s CI:=%d, MSE=%.2f"%(f,CI,sol.MSE_))
+		for i in range(ITER):
+			print("GA #%d"%i)
+			sol=ga(data,c)
+			CI = ci(sol,gt,c)
+			# plot_solution(sol,gt)
+			print("FINISH DATASET %s CI:=%d, MSE=%.2f"%(f,CI,sol.MSE_))
 
 
-np.random.seed(2991)
+#np.random.seed(2991)
 from sys import argv
 if len(argv)==2 and (argv[1] == 'full' or argv[1] == 'test'):
 	main(argv[1])
