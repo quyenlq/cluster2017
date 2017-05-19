@@ -154,9 +154,15 @@ k_test = [15]
 files_test = ['s1']
 
 
+<<<<<<< HEAD
 S = 9
 T = 10
 GLA = False 
+=======
+S = 5
+T = 5
+GLA = True
+>>>>>>> 98657c00ad970893cf35635ae6c8bbd9bf472e95
 GLA_STEPS = 3
 ITER = 10
 def main(arg):
