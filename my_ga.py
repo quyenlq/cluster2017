@@ -8,7 +8,7 @@ from solution import Solution, Point
 # M: number of clusters
 # return a new solution with M random centroids
 def gen_initial_solution(data, K):
-	random_centroids = data[np.random.choice(np.arange(len(data)),K)]
+	random_centroids = np.copy(data[np.random.choice(np.arange(len(data)),K)])
 	centroid_points = np.array([])
 	i = 0
 	for c in random_centroids:
@@ -16,7 +16,7 @@ def gen_initial_solution(data, K):
 		i+=1
 		centroid_points = np.append(centroid_points,centroid_point)
 	# Point class wrapper
-	data_points = np.array([Point(x) for x in data])
+	data_points = np.array([Point(np.copy(x)) for x in data])
 	return Solution(centroid_points,data_points)
 
 # f = data, c = number of cluster, k: number of cluster
