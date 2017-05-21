@@ -149,15 +149,15 @@ k_full = [15,15,15,15,20,35,50,8,100,100,16];
 files_full = ['s1','s2','s3','s4', 'a1', 'a2', 'a3','unbalance','birch1', 'birch2','dim32']
 k_lightweight = [15,15,15,15,20,35,50,8,16];
 files_lightweight = ['s1','s2','s3','s4', 'a1', 'a2', 'a3','unbalance','dim32']
-k_test = [15]
-files_test = ['s1']
+k_test = [35,50,8]
+files_test = ['a2','a3','unbalance']
 
 
 S = 9
 T = 10
 GLA = False 
 GLA_STEPS = 3
-ITER = 5
+ITER = 15
 def main(arg):
 	if arg=='full':
 		print("Use full dataset, might be slow")
