@@ -1,0 +1,7 @@
+- First install required packages: 
+	$ pip install -r requirement.txt
+- Run: 
+	$ python my_ga.py full
+- To skip dataset Birch1 and Birch2 just run:
+	$ python my_ga.py
+- Evalutation report: see ../cluster_eval.xlx
