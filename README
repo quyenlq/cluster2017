@@ -1,5 +1,11 @@
 - First install required packages: 
 	$ pip install -r requirement.txt
+- Config the algorithm parameters:
+	S = 9 # population size
+	T = 10 # iteration time 
+	GLA = False # enable GLA 
+	GLA_STEPS = 3 # number of GLA iteration
+	ITER = 15 # repeat algorithm
 - Run: 
 	$ python my_ga.py full
 - To skip dataset Birch1 and Birch2 just run:
