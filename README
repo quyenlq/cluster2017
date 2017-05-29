@@ -6,8 +6,12 @@
 	GLA = False # enable GLA 
 	GLA_STEPS = 3 # number of GLA iteration
 	ITER = 15 # repeat algorithm
-- Run: 
-	$ python my_ga.py full
-- To skip dataset Birch1 and Birch2 just run:
-	$ python my_ga.py
+
+- Run:
+	$ python my_ga.py <dataset_name> <number_of_cluster>
+	For exmple: $ python my_ga.py s1 15
+
+	Note: use "all" to run all dataset
+	      use "test" to run dataset s1
+	      only type dataset name without extension (e.g s1,s2,unbalance...)
 - Evalutation report: see ../cluster_eval.xlx

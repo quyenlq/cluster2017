@@ -1,7 +1,5 @@
 import numpy as np
 import copy
-import matplotlib.pyplot as plt
-import pdb
 from solution import Solution, Point
 
 
@@ -113,17 +111,17 @@ def combine_partitions(sol1,sol2,c_com,K):
 		combine_p=np.append(combine_p,x_new)
 	return combine_p
 
-def plot_solution(sol,gt):
-	plt.figure()
-	cx = np.array([c.xy_ for c in sol.centroids_])
-	for c in sol.centroids_:
-		partition = sol.get_partition(c.label_)
-		pxy = np.array([[p.getX(), p.getY()] for p in partition])
-		# pdb.set_trace()
-		plt.scatter(pxy[:, 0], pxy[:, 1], s=2, marker='.', c='b')
-	plt.scatter(cx[:, 0], cx[:, 1], marker='.', c='r')
-	plt.scatter(gt[:, 0], gt[:, 1], marker='.', c='m', )
-	plt.show()
+# def plot_solution(sol,gt):
+# 	plt.figure()
+# 	cx = np.array([c.xy_ for c in sol.centroids_])
+# 	for c in sol.centroids_:
+# 		partition = sol.get_partition(c.label_)
+# 		pxy = np.array([[p.getX(), p.getY()] for p in partition])
+# 		# pdb.set_trace()
+# 		plt.scatter(pxy[:, 0], pxy[:, 1], s=2, marker='.', c='b')
+# 	plt.scatter(cx[:, 0], cx[:, 1], marker='.', c='r')
+# 	plt.scatter(gt[:, 0], gt[:, 1], marker='.', c='m', )
+# 	plt.show()
 
 def ci(sol,gt,k):
 	cens = np.array([c.xy_ for c in sol.centroids_])
@@ -144,52 +142,59 @@ def one_way_ci(cens_A, cens_B, n_clus):
 # MAIN
 ################################################################################################
 
+data_profile = {
+	's1': 15,
+	's2': 15,
+	's3': 15,
+	's4': 15,
+	'a1': 20,
+	'a2': 35,
+	'a3': 50,
+	'unbalance': 8,
+	'birch1': 100,
+	'birch2': 100,
+	'unbalance': 16
+}
 
-k_full = [15,15,15,15,20,35,50,8,100,100,16];
-files_full = ['s1','s2','s3','s4', 'a1', 'a2', 'a3','unbalance','birch1', 'birch2','dim32']
-k_lightweight = [15,15,15,15,20,35,50,8,16];
-files_lightweight = ['s1','s2','s3','s4', 'a1', 'a2', 'a3','unbalance','dim32']
-k_test = [35,50,8]
-files_test = ['a2','a3','unbalance']
-
-
-S = 9
-T = 10
+S = 5
+T = 5
 GLA = False 
 GLA_STEPS = 3
-ITER = 15
+ITER = 5
+
+
+def run_ga(f,k):
+	print 'Running data set %s' % f
+	fi = open(f+'.txt')
+	fi_gt = open(f+'-gt.txt')
+	data = np.loadtxt(fi)
+	gt = np.loadtxt(fi_gt)
+	sol=ga(data,k)
+	CI = ci(sol,gt,k)
+	print("FINISH DATASET %s CI:=%d, MSE=%.2f"%(f,CI,sol.MSE_))
+
 def main(arg):
-	if arg=='full':
+	ds_name = arg[1]
+	if ds_name == 'all':
 		print("Use full dataset, might be slow")
-		files=files_full
-		k=k_full
-	elif arg=='test':
+		for f, p in data_profile.items():
+			k = p  # cluster size
+			run_ga(f, k)
+	elif ds_name == 'test':
 		print("Testing algorith, only use S1")
-		files=files_test
-		k=k_test
+		f = 's1'
+		p = data_profile[f]
+		run_ga(f, p)
+	if ds_name not in data_profile.keys():
+		print("Wrong dataset, try dataset name without extension (for example s1, s2 instead of s1.txt")
 	else:
-		print("Lightweight mode, skip Birch1 and Birch2")
-		files = files_lightweight
-		k = k_lightweight
-	for i in range(ITER):
-		print("ITERATION #%d"%i)
-		for f,c in zip(files,k):
-			print 'Running data set %s' %f
-			fi = open(f+'.txt')
-			fi_gt = open(f+'-gt.txt')
-			data = np.loadtxt(fi)
-			gt = np.loadtxt(fi_gt)
-			sol=ga(data,c)
-			CI = ci(sol,gt,c)
-			# plot_solution(sol,gt)
-			print("FINISH DATASET %s CI:=%d, MSE=%.2f"%(f,CI,sol.MSE_))
+		f = ds_name
+		p = data_profile[f]
+		run_ga(f, p)
 
-#np.random.seed(2991)
 from sys import argv
-if len(argv)==2 and (argv[1] == 'full' or argv[1] == 'test'):
-	main(argv[1])
+if len(argv)==3:
+	main(argv)
 else:
-	main('lightweight')
-
-
+	print 'ERROR: Wrong arguments: $ %s <dataset_name> <number_of_cluster>"' % (argv[0])
 
